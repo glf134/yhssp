@@ -1,0 +1,8 @@
+{
+  "name": "隐患随手拍",
+  "description": "面向工业安全管理场景的智能隐患识别与反馈平台，支持拍照、语音和文本多模态识别。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
