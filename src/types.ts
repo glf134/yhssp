@@ -11,6 +11,7 @@ export interface HazardResult {
   name: string;
   category: HazardCategory;
   riskLevel: RiskLevel;
+  description: string;
   suggestion: string;
   regulations?: string;
   references?: string[];

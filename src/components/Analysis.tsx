@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, X, ThumbsUp, ThumbsDown, CheckCircle2, AlertTriangle, BookOpen, FileText } from 'lucide-react';
+import { ArrowLeft, X, ThumbsUp, ThumbsDown, CheckCircle2, AlertTriangle, BookOpen, FileText, AlertCircle } from 'lucide-react';
 import { HazardRecord, HazardCategory } from '../types';
 
 interface AnalysisProps {
@@ -20,6 +20,7 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 export default function Analysis({ record, loading, onBack, onCorrection, onReport }: AnalysisProps) {
   const [streamedText, setStreamedText] = useState({
     name: '',
+    description: '',
     suggestion: '',
     regulations: '',
     references: [] as string[]
@@ -30,13 +31,15 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
   useEffect(() => {
     if (record && !loading && record.id !== 'temp') {
       // Reset and start streaming
-      setStreamedText({ name: '', suggestion: '', regulations: '', references: [] });
+      setStreamedText({ name: '', description: '', suggestion: '', regulations: '', references: [] });
       
       let nameIdx = 0;
+      let descIdx = 0;
       let suggIdx = 0;
       let regIdx = 0;
       
       const name = record.name;
+      const description = record.description || '正在分析隐患具体情况...';
       const suggestion = record.suggestion;
       const regulations = record.regulations || '暂无相关章程引用';
       const references = record.references || [];
@@ -44,11 +47,14 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
       const interval = setInterval(() => {
         setStreamedText(prev => {
           let nextName = prev.name;
+          let nextDesc = prev.description;
           let nextSugg = prev.suggestion;
           let nextReg = prev.regulations;
 
           if (nameIdx < name.length) {
             nextName += name[nameIdx++];
+          } else if (descIdx < description.length) {
+            nextDesc += description[descIdx++];
           } else if (suggIdx < suggestion.length) {
             nextSugg += suggestion[suggIdx++];
           } else if (regIdx < regulations.length) {
@@ -61,6 +67,7 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
           return {
             ...prev,
             name: nextName,
+            description: nextDesc,
             suggestion: nextSugg,
             regulations: nextReg
           };
@@ -133,6 +140,17 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
 
           {/* Hazards & Suggestions */}
           <div className="space-y-4">
+            {/* Hazard Description */}
+            <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-2">
+              <div className="flex items-center gap-2 text-orange-600 font-bold text-sm">
+                <AlertCircle className="w-4 h-4" /> 隐患说明
+              </div>
+              <p className="text-gray-600 text-sm leading-relaxed min-h-[3em]">
+                {loading ? '正在分析隐患详情...' : streamedText.description}
+              </p>
+            </div>
+
+            {/* Disposal Suggestions */}
             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
               <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
                 <CheckCircle2 className="w-4 h-4" /> 处置建议

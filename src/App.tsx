@@ -69,6 +69,7 @@ export default function App() {
         name: '',
         category: '人员行为类',
         riskLevel: '低',
+        description: '',
         suggestion: '',
         regulations: '',
         references: []
