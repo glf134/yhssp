@@ -216,7 +216,7 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
             onClick={onBack}
             className="flex-1 py-4 bg-white text-gray-500 rounded-full font-bold shadow-sm border border-gray-100 active:scale-95 transition-all"
           >
-            取消
+            重拍
           </button>
           <button 
             onClick={() => {
