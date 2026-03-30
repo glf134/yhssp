@@ -61,11 +61,12 @@ export default function History({ records, onBack, onSelectRecord }: HistoryProp
                   <p className="text-[10px] text-gray-300 mt-2">{new Date(record.timestamp).toLocaleString()}</p>
                 </div>
                 <div className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                  record.riskLevel === '高' ? 'text-red-500 bg-red-50' : 
-                  record.riskLevel === '中' ? 'text-orange-500 bg-orange-50' : 
+                  record.hazardLevel === '重大隐患' ? 'text-red-500 bg-red-50' : 
+                  record.hazardLevel === '较大2级' ? 'text-orange-600 bg-orange-50' : 
+                  record.hazardLevel === '较大1级' ? 'text-orange-400 bg-orange-50' : 
                   'text-blue-500 bg-blue-50'
                 }`}>
-                  {record.riskLevel}风险
+                  {record.hazardLevel}
                 </div>
               </GlassCard>
             </div>

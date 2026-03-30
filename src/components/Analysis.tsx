@@ -9,6 +9,7 @@ interface AnalysisProps {
   onBack: () => void;
   onCorrection: (data: any) => void;
   onReport: (id: string) => void;
+  onRating: (id: string, rating: 'like' | 'dislike' | null, feedback?: string) => void;
 }
 
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -17,59 +18,46 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
   </div>
 );
 
-export default function Analysis({ record, loading, onBack, onCorrection, onReport }: AnalysisProps) {
+export default function Analysis({ record, loading, onBack, onCorrection, onReport, onRating }: AnalysisProps) {
   const [streamedText, setStreamedText] = useState({
     name: '',
-    description: '',
-    suggestion: '',
-    regulations: '',
-    references: [] as string[]
+    description: ''
   });
   const [correctionMode, setCorrectionMode] = useState(false);
   const [correctionData, setCorrectionData] = useState({ category: '' as HazardCategory, description: '' });
+  
+  const [feedbackMode, setFeedbackMode] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
 
   useEffect(() => {
     if (record && !loading && record.id !== 'temp') {
       // Reset and start streaming
-      setStreamedText({ name: '', description: '', suggestion: '', regulations: '', references: [] });
+      setStreamedText({ name: '', description: '' });
       
       let nameIdx = 0;
       let descIdx = 0;
-      let suggIdx = 0;
-      let regIdx = 0;
       
       const name = record.name;
       const description = record.description || '正在分析隐患具体情况...';
-      const suggestion = record.suggestion;
-      const regulations = record.regulations || '暂无相关章程引用';
-      const references = record.references || [];
 
       const interval = setInterval(() => {
         setStreamedText(prev => {
           let nextName = prev.name;
           let nextDesc = prev.description;
-          let nextSugg = prev.suggestion;
-          let nextReg = prev.regulations;
 
           if (nameIdx < name.length) {
             nextName += name[nameIdx++];
           } else if (descIdx < description.length) {
             nextDesc += description[descIdx++];
-          } else if (suggIdx < suggestion.length) {
-            nextSugg += suggestion[suggIdx++];
-          } else if (regIdx < regulations.length) {
-            nextReg += regulations[regIdx++];
           } else {
             clearInterval(interval);
-            return { ...prev, references };
+            return prev;
           }
 
           return {
             ...prev,
             name: nextName,
-            description: nextDesc,
-            suggestion: nextSugg,
-            regulations: nextReg
+            description: nextDesc
           };
         });
       }, 5); // Speed up to 5ms
@@ -80,10 +68,27 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
 
   if (!record) return null;
 
-  const riskColors = {
-    '高': 'text-red-500 bg-red-50 border-red-100',
-    '中': 'text-orange-500 bg-orange-50 border-orange-100',
-    '低': 'text-blue-500 bg-blue-50 border-blue-100'
+  const handleLike = () => {
+    if (loading) return;
+    const newRating = record.rating === 'like' ? null : 'like';
+    onRating(record.id, newRating);
+  };
+
+  const handleDislike = () => {
+    if (loading) return;
+    if (record.rating === 'dislike') {
+      // Toggle off
+      onRating(record.id, null);
+    } else {
+      // Toggle on + show feedback
+      setFeedbackText(record.feedback || '');
+      setFeedbackMode(true);
+    }
+  };
+
+  const submitFeedback = () => {
+    onRating(record.id, 'dislike', feedbackText);
+    setFeedbackMode(false);
   };
 
   return (
@@ -117,28 +122,82 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
 
         <GlassCard className="p-6 space-y-6">
           <div className="flex items-start justify-between">
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <h2 className="text-2xl font-bold text-gray-800 min-h-[1.5em]">
                 {loading ? '正在识别隐患...' : (streamedText.name || '分析完成')}
               </h2>
-              {!loading && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-400">{record.category}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${riskColors[record.riskLevel]}`}>
-                    {record.riskLevel}风险
-                  </span>
-                </div>
-              )}
             </div>
             {!loading && (
               <div className="flex gap-2">
-                <button className="p-2 bg-gray-50 rounded-full text-gray-300 active:text-blue-500 transition-colors"><ThumbsUp className="w-5 h-5" /></button>
-                <button onClick={() => setCorrectionMode(true)} className="p-2 bg-gray-50 rounded-full text-gray-300 active:text-red-500 transition-colors"><ThumbsDown className="w-5 h-5" /></button>
+                <button 
+                  onClick={handleLike}
+                  className={`p-2 rounded-full transition-all active:scale-90 ${
+                    record.rating === 'like' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-300'
+                  }`}
+                >
+                  <ThumbsUp className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={handleDislike}
+                  className={`p-2 rounded-full transition-all active:scale-90 ${
+                    record.rating === 'dislike' ? 'bg-red-500 text-white shadow-md' : 'bg-gray-50 text-gray-300'
+                  }`}
+                >
+                  <ThumbsDown className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Hazards & Suggestions */}
+          {!loading && (
+            <div className="grid grid-cols-1 gap-4 pt-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">隐患级别</label>
+                <select 
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  value={record.hazardLevel}
+                  onChange={(e) => onCorrection({ hazardLevel: e.target.value })}
+                >
+                  <option value="一般隐患">一般隐患</option>
+                  <option value="较大1级">较大1级</option>
+                  <option value="较大2级">较大2级</option>
+                  <option value="重大隐患">重大隐患</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">违章级别</label>
+                <select 
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  value={record.violationLevel}
+                  onChange={(e) => onCorrection({ violationLevel: e.target.value })}
+                >
+                  <option value="一类">一类</option>
+                  <option value="二类">二类</option>
+                  <option value="三类">三类</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">检查选项</label>
+                <div className="flex gap-2">
+                  {['日常检查', '专项检查'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => onCorrection({ checkType: type })}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        record.checkType === type 
+                          ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm' 
+                          : 'bg-white border-gray-100 text-gray-400'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hazards */}
           <div className="space-y-4">
             {/* Hazard Description */}
             <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-2">
@@ -149,67 +208,70 @@ export default function Analysis({ record, loading, onBack, onCorrection, onRepo
                 {loading ? '正在分析隐患详情...' : streamedText.description}
               </p>
             </div>
-
-            {/* Disposal Suggestions */}
-            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
-              <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
-                <CheckCircle2 className="w-4 h-4" /> 处置建议
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed min-h-[3em]">
-                {loading ? '等待 AI 生成建议...' : streamedText.suggestion}
-              </p>
-            </div>
-
-            {/* Regulations */}
-            <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-2">
-              <div className="flex items-center gap-2 text-purple-600 font-bold text-sm">
-                <BookOpen className="w-4 h-4" /> 违反规定章程
-              </div>
-              <p className="text-gray-600 text-sm leading-relaxed italic">
-                {loading ? '正在检索相关章程...' : streamedText.regulations}
-              </p>
-            </div>
-
-            {/* References */}
-            {(!loading || streamedText.references.length > 0) && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-500 font-bold text-sm px-1">
-                  <FileText className="w-4 h-4" /> 引用文档
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {loading ? (
-                    <div className="text-[10px] text-gray-300 italic px-1">正在匹配文档库...</div>
-                  ) : (
-                    streamedText.references.map((ref, idx) => (
-                      <div key={idx} className="px-3 py-1.5 bg-white border border-gray-100 rounded-full text-[10px] text-gray-500 shadow-sm flex items-center gap-1">
-                        <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                        {ref}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </GlassCard>
 
-        <button 
-          onClick={() => {
-            if (record.id) onReport(record.id);
-            onBack();
-          }}
-          disabled={loading || record.reported}
-          className={`w-full py-4 rounded-full font-bold shadow-lg active:scale-95 transition-all ${
-            loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
-            record.reported ? 'bg-emerald-500 text-white shadow-emerald-200' :
-            'bg-blue-600 text-white shadow-blue-200'
-          }`}
-        >
-          {loading ? '分析中...' : record.reported ? '已上报' : '确认并上报'}
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={onBack}
+            className="flex-1 py-4 bg-white text-gray-500 rounded-full font-bold shadow-sm border border-gray-100 active:scale-95 transition-all"
+          >
+            取消
+          </button>
+          <button 
+            onClick={() => {
+              if (record.id) onReport(record.id);
+              onBack();
+            }}
+            disabled={loading || record.reported}
+            className={`flex-[2] py-4 rounded-full font-bold shadow-lg active:scale-95 transition-all ${
+              loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 
+              record.reported ? 'bg-emerald-500 text-white shadow-emerald-200' :
+              'bg-blue-600 text-white shadow-blue-200'
+            }`}
+          >
+            {loading ? '分析中...' : record.reported ? '已上报' : '确认并上报'}
+          </button>
+        </div>
       </main>
 
-      {/* Correction Modal */}
+      {/* Feedback Modal (for Dislike) */}
+      <AnimatePresence>
+        {feedbackMode && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-black/40 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-[32px] p-8 space-y-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-800">反馈内容</h3>
+                <button onClick={() => setFeedbackMode(false)}><X className="w-6 h-6 text-gray-400" /></button>
+              </div>
+              <textarea 
+                placeholder="请填写您的反馈意见..."
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none focus:ring-2 focus:ring-red-500/20 h-32 resize-none text-sm"
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+              />
+              <button 
+                onClick={submitFeedback}
+                className="w-full py-4 bg-red-500 text-white rounded-full font-bold shadow-lg shadow-red-200 active:scale-95 transition-all"
+              >
+                提交并标记
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Correction Modal (General) */}
       <AnimatePresence>
         {correctionMode && (
           <motion.div 

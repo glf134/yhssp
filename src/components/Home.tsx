@@ -7,12 +7,11 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   FileText, 
-  ChevronRight, 
   ChevronDown, 
   Camera,
-  Plus,
+  Upload,
   ArrowRight,
-  LogOut
+  BarChart3
 } from 'lucide-react';
 import { HazardRecord, HazardCategory } from '../types';
 
@@ -43,11 +42,12 @@ export default function Home({
   setTextInput,
   setCorrectionData
 }: HomeProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleGuideClick = (cat: HazardCategory) => {
     setCorrectionData({ category: cat });
-    fileInputRef.current?.click();
+    cameraInputRef.current?.click();
   };
 
   return (
@@ -60,12 +60,20 @@ export default function Home({
           </button>
           <span className="text-xl font-bold text-gray-800">隐患随手拍</span>
         </div>
-        <button 
-          onClick={() => onNavigate('profile')}
-          className="p-2 bg-white/60 rounded-full active:scale-95 transition-all flex items-center gap-1 text-xs font-bold text-gray-700"
-        >
-          <User className="w-5 h-5" /> 我的
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => onNavigate('dashboard')}
+            className="p-2 bg-white/60 rounded-full active:scale-95 transition-all text-gray-700"
+          >
+            <BarChart3 className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => onNavigate('profile')}
+            className="p-2 bg-white/60 rounded-full active:scale-95 transition-all flex items-center gap-1 text-xs font-bold text-gray-700"
+          >
+            <User className="w-5 h-5" /> 我的
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 px-6 pt-4 relative overflow-y-auto pb-32">
@@ -112,7 +120,6 @@ export default function Home({
                   <h3 className="font-bold text-gray-800">{item.cat}</h3>
                   <p className="text-xs text-gray-400">{item.desc}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-300" />
               </div>
             ))}
           </div>
@@ -169,39 +176,34 @@ export default function Home({
         </GlassCard>
       </main>
 
-      {/* Bottom Action Bar */}
-      <div className="sticky bottom-0 left-0 right-0 px-4 pb-8 pt-4 bg-white border-t border-gray-100">
-        <div className="flex items-center gap-3 bg-gray-50 rounded-full p-2 border border-gray-200">
-          <button className="p-2 bg-white rounded-full text-gray-400 shadow-sm">
-            <div className="flex items-center gap-0.5">
-              <div className="w-1 h-3 bg-gray-300 rounded-full"></div>
-              <div className="w-1 h-5 bg-gray-400 rounded-full"></div>
-              <div className="w-1 h-3 bg-gray-300 rounded-full"></div>
-            </div>
-          </button>
-          <input 
-            type="text" 
-            placeholder="发消息或按住说话..."
-            className="flex-1 bg-transparent outline-none text-sm text-gray-600"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onTextSubmit(textInput)}
-          />
-          <button className="p-2 text-gray-400"><Plus className="w-6 h-6" /></button>
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 bg-blue-600 text-white rounded-full shadow-lg"
-          >
-            <Camera className="w-6 h-6" />
-          </button>
-        </div>
+      {/* Bottom Action Bar - Redesigned to match screenshot */}
+      <div className="sticky bottom-0 left-0 right-0 px-6 pb-4 pt-1 bg-white/90 backdrop-blur-lg border-t border-gray-100 flex items-center gap-6">
+        <button 
+          onClick={() => galleryInputRef.current?.click()}
+          className="p-2 text-gray-900 active:scale-90 transition-all"
+        >
+          <Upload className="w-7 h-7" strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={() => cameraInputRef.current?.click()}
+          className="flex-1 flex items-center justify-center py-2.5 bg-[#1A1AFF] text-white rounded-2xl shadow-lg active:scale-95 transition-all"
+        >
+          <Camera className="w-7 h-7" strokeWidth={1.5} />
+        </button>
       </div>
 
       <input 
         type="file" 
         accept="image/*" 
+        ref={galleryInputRef} 
+        className="hidden" 
+        onChange={onImageUpload}
+      />
+      <input 
+        type="file" 
+        accept="image/*" 
         capture="environment" 
-        ref={fileInputRef} 
+        ref={cameraInputRef} 
         className="hidden" 
         onChange={onImageUpload}
       />

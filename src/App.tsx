@@ -14,10 +14,11 @@ import Home from './components/Home';
 import History from './components/History';
 import Analysis from './components/Analysis';
 import Profile from './components/Profile';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [view, setView] = useState<'home' | 'history' | 'result' | 'profile'>('home');
+  const [view, setView] = useState<'home' | 'history' | 'result' | 'profile' | 'dashboard'>('home');
   const [records, setRecords] = useState<HazardRecord[]>([]);
   const [currentResult, setCurrentResult] = useState<HazardRecord | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,12 +27,103 @@ export default function App() {
 
   useEffect(() => {
     const saved = localStorage.getItem('hazard_records');
+    let initialRecords: HazardRecord[] = [];
     if (saved) {
       try {
-        setRecords(JSON.parse(saved));
+        initialRecords = JSON.parse(saved);
       } catch (e) {
         console.error("Failed to load records", e);
       }
+    }
+
+    // If no records or only the old single test record, load the full mock data
+    if (initialRecords.length <= 1) {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      
+      const mockRecords: HazardRecord[] = [
+        {
+          id: 'mock-1',
+          timestamp: now,
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard1/400/300',
+          name: '配电箱未接地',
+          category: '设备设施类',
+          hazardLevel: '一般隐患',
+          violationLevel: '二类',
+          checkType: '日常检查',
+          description: '发现配电箱外壳未连接接地线，存在触电风险。',
+          reported: true
+        },
+        {
+          id: 'mock-2',
+          timestamp: now - dayMs, // Yesterday
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard2/400/300',
+          name: '高空作业未系安全带',
+          category: '人员行为类',
+          hazardLevel: '重大隐患',
+          violationLevel: '一类',
+          checkType: '专项检查',
+          description: '施工人员在5米高处作业时未佩戴安全带。',
+          reported: true
+        },
+        {
+          id: 'mock-3',
+          timestamp: now - 2 * dayMs,
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard3/400/300',
+          name: '消防通道堆放杂物',
+          category: '安全防护类',
+          hazardLevel: '较大1级',
+          violationLevel: '三类',
+          checkType: '日常检查',
+          description: '二楼北侧消防通道被废旧纸箱堵塞。',
+          reported: false
+        },
+        {
+          id: 'mock-4',
+          timestamp: now - 3 * dayMs,
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard4/400/300',
+          name: '电线绝缘皮破损',
+          category: '设备设施类',
+          hazardLevel: '较大2级',
+          violationLevel: '二类',
+          checkType: '日常检查',
+          description: '临时用电线路有一处绝缘皮磨损严重，露出铜芯。',
+          reported: true
+        },
+        {
+          id: 'mock-5',
+          timestamp: now - 4 * dayMs,
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard5/400/300',
+          name: '易燃物靠近火源',
+          category: '作业环境类',
+          hazardLevel: '一般隐患',
+          violationLevel: '三类',
+          checkType: '日常检查',
+          description: '焊接作业区附近堆放有大量易燃油漆桶。',
+          reported: false
+        },
+        {
+          id: 'mock-6',
+          timestamp: now,
+          type: 'image',
+          content: 'https://picsum.photos/seed/hazard6/400/300',
+          name: '未佩戴安全帽',
+          category: '人员行为类',
+          hazardLevel: '较大1级',
+          violationLevel: '一类',
+          checkType: '专项检查',
+          description: '进入施工现场未按规定佩戴安全帽。',
+          reported: true
+        }
+      ];
+      setRecords(mockRecords);
+    } else {
+      setRecords(initialRecords);
     }
   }, []);
 
@@ -68,11 +160,10 @@ export default function App() {
         content: base64,
         name: '',
         category: '人员行为类',
-        riskLevel: '低',
-        description: '',
-        suggestion: '',
-        regulations: '',
-        references: []
+        hazardLevel: '一般隐患',
+        violationLevel: '三类',
+        checkType: '日常检查',
+        description: ''
       });
 
       try {
@@ -128,6 +219,13 @@ export default function App() {
     setCurrentResult(updatedRecord);
   };
 
+  const handleRating = (id: string, rating: 'like' | 'dislike' | null, feedback?: string) => {
+    setRecords(prev => prev.map(r => r.id === id ? { ...r, rating, feedback: feedback || r.feedback } : r));
+    if (currentResult && currentResult.id === id) {
+      setCurrentResult(prev => prev ? { ...prev, rating, feedback: feedback || prev.feedback } : null);
+    }
+  };
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setView('home');
@@ -136,7 +234,7 @@ export default function App() {
   const handleReport = (id: string) => {
     setRecords(prev => prev.map(r => r.id === id ? { ...r, reported: true } : r));
     if (currentResult && currentResult.id === id) {
-      setCurrentResult({ ...currentResult, reported: true });
+      setCurrentResult(prev => prev ? { ...prev, reported: true } : null);
     }
   };
 
@@ -193,6 +291,14 @@ export default function App() {
             />
           </motion.div>
         )}
+        {view === 'dashboard' && (
+          <motion.div key="dashboard" initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="h-full">
+            <Dashboard 
+              records={records}
+              onBack={() => setView('home')}
+            />
+          </motion.div>
+        )}
         {view === 'result' && (
           <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
             <Analysis 
@@ -201,6 +307,7 @@ export default function App() {
               onBack={() => setView('home')}
               onCorrection={handleCorrection}
               onReport={handleReport}
+              onRating={handleRating}
             />
           </motion.div>
         )}

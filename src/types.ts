@@ -1,4 +1,6 @@
-export type RiskLevel = '高' | '中' | '低';
+export type HazardLevel = '一般隐患' | '较大1级' | '较大2级' | '重大隐患';
+export type ViolationLevel = '一类' | '二类' | '三类';
+export type CheckType = '日常检查' | '专项检查';
 
 export type HazardCategory = 
   | '人员行为类' 
@@ -10,11 +12,10 @@ export type HazardCategory =
 export interface HazardResult {
   name: string;
   category: HazardCategory;
-  riskLevel: RiskLevel;
+  hazardLevel: HazardLevel;
+  violationLevel: ViolationLevel;
+  checkType?: CheckType;
   description: string;
-  suggestion: string;
-  regulations?: string;
-  references?: string[];
 }
 
 export interface HazardRecord extends HazardResult {
@@ -23,4 +24,6 @@ export interface HazardRecord extends HazardResult {
   type: 'image' | 'voice' | 'text';
   content?: string; // base64 for image, text for voice/text
   reported?: boolean;
+  feedback?: string;
+  rating?: 'like' | 'dislike' | null;
 }
