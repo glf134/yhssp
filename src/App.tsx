@@ -167,9 +167,20 @@ export default function App() {
       });
 
       try {
-        const result = await identifyHazardFromImage(base64);
+        // Simulate AI analysis delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const mockResult: HazardResult = {
+          name: '识别结果：施工现场安全隐患',
+          category: '设备设施类',
+          hazardLevel: '一般隐患',
+          violationLevel: '二类',
+          checkType: '日常检查',
+          description: 'AI 模拟识别：发现该区域存在潜在的安全风险，请及时核查。'
+        };
+
         const newRecord: HazardRecord = {
-          ...result,
+          ...mockResult,
           id: Date.now().toString(),
           timestamp: Date.now(),
           type: 'image',
@@ -178,7 +189,7 @@ export default function App() {
         setCurrentResult(newRecord);
         addRecord(newRecord);
       } catch (error) {
-        console.error("AI Recognition failed", error);
+        console.error("Mock Recognition failed", error);
       } finally {
         setLoading(false);
       }
@@ -191,9 +202,20 @@ export default function App() {
     setLoading(true);
     setView('result');
     try {
-      const result = await identifyHazardFromText(text);
+      // Simulate AI analysis delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockResult: HazardResult = {
+        name: '文字识别：安全隐患描述',
+        category: '作业环境类',
+        hazardLevel: '一般隐患',
+        violationLevel: '三类',
+        checkType: '日常检查',
+        description: `AI 模拟识别：针对您描述的内容“${text}”，系统已记录并分类。`
+      };
+
       const newRecord: HazardRecord = {
-        ...result,
+        ...mockResult,
         id: Date.now().toString(),
         timestamp: Date.now(),
         type: 'text',
@@ -203,7 +225,7 @@ export default function App() {
       addRecord(newRecord);
       setTextInput('');
     } catch (error) {
-      console.error("AI Recognition failed", error);
+      console.error("Mock Text Recognition failed", error);
     } finally {
       setLoading(false);
     }
