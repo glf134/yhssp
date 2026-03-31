@@ -18,6 +18,14 @@ const GlassCard = ({ children, className = "", onClick }: { children: React.Reac
 );
 
 export default function History({ records, onBack, onSelectRecord }: HistoryProps) {
+  const [filter, setFilter] = React.useState<'all' | 'reported' | 'unreported'>('all');
+
+  const filteredRecords = records.filter(record => {
+    if (filter === 'reported') return record.reported;
+    if (filter === 'unreported') return !record.reported;
+    return true;
+  });
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-[#E8EAF6] to-white">
       <header className="px-6 pt-12 pb-4 flex items-center justify-between">
@@ -28,12 +36,33 @@ export default function History({ records, onBack, onSelectRecord }: HistoryProp
         <div className="w-10"></div>
       </header>
       <main className="flex-1 p-6 overflow-y-auto space-y-4">
-        {records.length === 0 ? (
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-2">
+          {[
+            { id: 'all', label: '全部' },
+            { id: 'reported', label: '已报' },
+            { id: 'unreported', label: '未报' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id as any)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                filter === tab.id 
+                  ? 'bg-blue-500 text-white shadow-md' 
+                  : 'bg-white/60 text-gray-400 hover:bg-white/80'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {filteredRecords.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <p>暂无识别记录</p>
           </div>
         ) : (
-          records.map((record) => (
+          filteredRecords.map((record) => (
             <div key={record.id}>
               <GlassCard 
                 className="p-4 flex items-center gap-4 active:scale-[0.98] transition-all" 

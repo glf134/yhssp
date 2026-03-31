@@ -17,6 +17,14 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 );
 
 export default function Profile({ records, onBack, onLogout, onDeleteRecord, onSelectRecord }: ProfileProps) {
+  const [filter, setFilter] = React.useState<'all' | 'reported' | 'unreported'>('all');
+
+  const filteredRecords = records.filter(record => {
+    if (filter === 'reported') return record.reported;
+    if (filter === 'unreported') return !record.reported;
+    return true;
+  });
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-[#E8EAF6] to-white overflow-hidden">
       <header className="px-6 pt-12 pb-4 flex items-center justify-between">
@@ -67,10 +75,32 @@ export default function Profile({ records, onBack, onLogout, onDeleteRecord, onS
         {/* My Records Section */}
         <div>
           <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="font-bold text-gray-800">我的隐患记录 ({records.length})</h3>
+            <h3 className="font-bold text-gray-800">我的隐患记录 ({filteredRecords.length})</h3>
           </div>
+
+          {/* Filter Tabs */}
+          <div className="flex gap-2 mb-4 px-2">
+            {[
+              { id: 'all', label: '全部' },
+              { id: 'reported', label: '已报' },
+              { id: 'unreported', label: '未报' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id as any)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  filter === tab.id 
+                    ? 'bg-blue-500 text-white shadow-md' 
+                    : 'bg-white/60 text-gray-400 hover:bg-white/80'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           <div className="space-y-3">
-            {records.map((record) => (
+            {filteredRecords.map((record) => (
               <div 
                 key={record.id} 
                 className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-white/40 group"
